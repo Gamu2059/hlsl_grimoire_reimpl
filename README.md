@@ -1,0 +1,2 @@
+# hlsl_grimoire_reimpl
+HLSLシェーダーの魔導書で紹介されている表現をUnityで再現実装するためのリポジトリ
