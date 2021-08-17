@@ -1,4 +1,4 @@
-﻿Shader "Hidden/hlsl_grimoire/sample10_02/monochrome"
+﻿Shader "Hidden/hlsl_grimoire/sample10_03/avg_blur"
 {
     Properties
     {
@@ -6,8 +6,8 @@
     }
     SubShader
     {
-        Cull Off
-        ZWrite Off
+        Cull Off 
+        ZWrite Off 
         ZTest Off
         Blend SrcAlpha OneMinusSrcAlpha
 
@@ -35,9 +35,13 @@
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
             CBUFFER_END
 
             float _Lerp;
+            int _SamplingCount;
+            int _SamplingSpace;
+            half _AvgDivFactor;
 
             Varyings vert(Attributes i)
             {
@@ -50,9 +54,23 @@
             half4 frag(Varyings i) : SV_Target
             {
                 half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
-                half monochromeFactor = 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
-                half4 monochromeColor = half4(monochromeFactor, monochromeFactor, monochromeFactor, color.a);
-                return lerp(color, monochromeColor, _Lerp);
+                half4 blurColor = color;
+                float2 offset = _MainTex_TexelSize.xy * _SamplingSpace;
+                for (int x = -_SamplingCount; x <= _SamplingCount; x++)
+                {
+                    for (int y = -_SamplingCount; y <= _SamplingCount; y++)
+                    {
+                        if (x == 0 && y == 0)
+                        {
+                            continue;
+                        }
+
+                        float2 uv = offset * float2(x, y);
+                        blurColor += SAMPLE_TEXTURE2D_X(_MainTex, sampler_MainTex, i.uv + uv);
+                    }
+                }
+                blurColor *= _AvgDivFactor;
+                return lerp(color, blurColor, _Lerp);
             }
             ENDHLSL
         }
