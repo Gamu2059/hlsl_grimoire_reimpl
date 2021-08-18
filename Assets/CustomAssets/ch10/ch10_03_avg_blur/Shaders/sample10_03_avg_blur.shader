@@ -6,10 +6,9 @@
     }
     SubShader
     {
-        Cull Off 
-        ZWrite Off 
+        Cull Off
+        ZWrite Off
         ZTest Off
-        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {
@@ -18,22 +17,10 @@
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            struct Attributes
-            {
-                float3 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
-            };
+            #include "Library/PackageCache/com.unity.render-pipelines.universal@10.5.0/Shaders/PostProcessing/Common.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
             TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
             float4 _MainTex_ST;
             float4 _MainTex_TexelSize;
             CBUFFER_END
@@ -53,7 +40,7 @@
 
             half4 frag(Varyings i) : SV_Target
             {
-                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_LinearClamp, i.uv);
                 half4 blurColor = color;
                 float2 offset = _MainTex_TexelSize.xy * _SamplingSpace;
                 for (int x = -_SamplingCount; x <= _SamplingCount; x++)
@@ -66,7 +53,7 @@
                         }
 
                         float2 uv = offset * float2(x, y);
-                        blurColor += SAMPLE_TEXTURE2D_X(_MainTex, sampler_MainTex, i.uv + uv);
+                        blurColor += SAMPLE_TEXTURE2D_X(_MainTex, sampler_LinearClamp, i.uv + uv);
                     }
                 }
                 blurColor *= _AvgDivFactor;

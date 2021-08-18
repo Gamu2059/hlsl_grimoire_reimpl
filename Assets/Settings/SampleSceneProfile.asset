@@ -125,6 +125,7 @@ MonoBehaviour:
   - {fileID: -7011558710299706105}
   - {fileID: 6834126032672037944}
   - {fileID: -4731304611350472942}
+  - {fileID: 8254482884799307269}
 --- !u!114 &849379129802519247
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -168,5 +169,44 @@ MonoBehaviour:
     max: 3
   samplingSpace:
     m_OverrideState: 1
-    m_Value: 5
+    m_Value: 3
     min: 0
+--- !u!114 &8254482884799307269
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe7ad1a18720c4ed390373d2af5800af, type: 3}
+  m_Name: CustomGaussianBlur
+  m_EditorClassIdentifier: 
+  active: 0
+  m_AdvancedMode: 0
+  lerp:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 1
+  samplingCount:
+    m_OverrideState: 1
+    m_Value: 3
+    min: 1
+    max: 3
+  samplingSpace:
+    m_OverrideState: 1
+    m_Value: 3
+    min: 0
+  distribution:
+    m_OverrideState: 1
+    m_Value: 3
+  downSamplingRate:
+    m_OverrideState: 1
+    m_Value: 0.5
+    min: 0.1
+    max: 1
+  use2pass:
+    m_OverrideState: 1
+    m_Value: 1

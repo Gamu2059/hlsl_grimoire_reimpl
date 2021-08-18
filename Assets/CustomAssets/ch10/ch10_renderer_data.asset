@@ -1,5 +1,20 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7997454909813537493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62b6098fb598947149eda75ba39fda7d, type: 3}
+  m_Name: CustomGaussianBlur
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 9482d68a7a9f14d3188391b84d8635f5, type: 3}
 --- !u!114 &-1297378750679320909
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28,9 +43,10 @@ MonoBehaviour:
   m_Name: ch10_renderer_data
   m_EditorClassIdentifier: 
   m_RendererFeatures:
-  - {fileID: -1297378750679320909}
   - {fileID: 6687473052016949330}
-  m_RendererFeatureMap: b3769e6ae6c8feed52b8771e4fadce5c
+  - {fileID: -1297378750679320909}
+  - {fileID: -7997454909813537493}
+  m_RendererFeatureMap: 52b8771e4fadce5cb3769e6ae6c8feed2b455cc121550391
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
