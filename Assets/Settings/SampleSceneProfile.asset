@@ -103,8 +103,8 @@ MonoBehaviour:
   active: 0
   m_AdvancedMode: 0
   lerp:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 1
     min: 0
     max: 1
 --- !u!114 &11400000
@@ -123,8 +123,8 @@ MonoBehaviour:
   - {fileID: 849379129802519247}
   - {fileID: -7893295128165547882}
   - {fileID: -7011558710299706105}
-  - {fileID: -4731304611350472942}
   - {fileID: 6834126032672037944}
+  - {fileID: -4731304611350472942}
 --- !u!114 &849379129802519247
 MonoBehaviour:
   m_ObjectHideFlags: 3
