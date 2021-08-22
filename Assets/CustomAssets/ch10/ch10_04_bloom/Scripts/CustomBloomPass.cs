@@ -1,23 +1,24 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Gamu2059.hlsl_grimoire.ch10_03 {
+namespace Gamu2059.hlsl_grimoire.ch10_04 {
     /// <summary>
-    /// ガウシアンブラーの実装
+    /// ブルームの実装
     /// </summary>
-    public class CustomGaussianBlurPass : ScriptableRenderPass {
+    public class CustomBloomPass : ScriptableRenderPass {
         [Serializable]
         public class CreateParam {
             public Shader shader;
         }
 
-        private readonly string renderTag = "CustomGaussianBlur";
-        private readonly int sample1Id = Shader.PropertyToID("CustomGaussianSample1");
-        private readonly int sample2Id = Shader.PropertyToID("CustomGaussianSample2");
+        private readonly string renderTag = "CustomBloom";
+        private readonly int luminanceId = Shader.PropertyToID("CustomBloomLuminance");
+        private readonly int sample1Id = Shader.PropertyToID("CustomBloomSample1");
+        private readonly int sample2Id = Shader.PropertyToID("CustomBloomSample2");
         private readonly int lerpId = Shader.PropertyToID("_Lerp");
+        private readonly int tintId = Shader.PropertyToID("_Tint");
         private readonly int samplingCountId = Shader.PropertyToID("_SamplingCount");
         private readonly int samplingSpaceId = Shader.PropertyToID("_SamplingSpace");
         private readonly int samplingWeightsId = Shader.PropertyToID("_SamplingWeights");
@@ -25,8 +26,8 @@ namespace Gamu2059.hlsl_grimoire.ch10_03 {
 
         private readonly Material material;
 
-        public CustomGaussianBlurPass(CreateParam param) {
-            profilingSampler = new ProfilingSampler(nameof(CustomAvgBlurPass));
+        public CustomBloomPass(CreateParam param) {
+            profilingSampler = new ProfilingSampler(nameof(CustomBloom));
             renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
             material = CoreUtils.CreateEngineMaterial(param.shader);
         }
@@ -47,7 +48,7 @@ namespace Gamu2059.hlsl_grimoire.ch10_03 {
             }
 
             var volumeStack = VolumeManager.instance.stack;
-            var component = volumeStack.GetComponent<CustomGaussianBlur>();
+            var component = volumeStack.GetComponent<CustomBloom>();
             if (component == null || !component.IsActive()) {
                 return;
             }
@@ -71,37 +72,51 @@ namespace Gamu2059.hlsl_grimoire.ch10_03 {
         private void Exec1PassBlur(
             ref ScriptableRenderContext context,
             ref RenderingData renderingData,
-            CustomGaussianBlur component) {
+            CustomBloom component) {
             var cmd = CommandBufferPool.Get(renderTag);
 
+            var renderer = renderingData.cameraData.renderer;
+            var cameraDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+            
             // テクスチャを確保
-            var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+            cmd.GetTemporaryRT(luminanceId, cameraDescriptor.width, cameraDescriptor.height, 0, FilterMode.Bilinear, RenderTextureFormat.ARGBHalf);
+            
             var downSamplingRate = component.downSamplingRate.value;
-            var width = (int) (cameraTargetDescriptor.width * downSamplingRate);
-            var height = (int) (cameraTargetDescriptor.height * downSamplingRate);
+            var width = (int) (cameraDescriptor.width * downSamplingRate);
+            var height = (int) (cameraDescriptor.height * downSamplingRate);
             var descriptor = new RenderTextureDescriptor(width, height, RenderTextureFormat.ARGB32);
             cmd.GetTemporaryRT(sample1Id, descriptor);
+            
+            // 輝度テクスチャの初期化
+            cmd.SetRenderTarget(luminanceId);
+            cmd.ClearRenderTarget(false, true, Color.black);
+            context.ExecuteCommandBuffer(cmd);
 
             // パラメータを計算
             var samplingCount = component.samplingCount.value;
             var distribution = component.distribution.value;
             var normalizedGaussianArray = Calc1PassNormalizedGaussianArray(samplingCount, distribution);
-
+            
             // パラメータをシェーダに送信
+            cmd.Clear();
             cmd.SetGlobalFloat(lerpId, component.lerp.value);
             cmd.SetGlobalInt(samplingCountId, samplingCount);
             cmd.SetGlobalFloat(samplingSpaceId, component.samplingSpace.value);
             cmd.SetGlobalFloatArray(samplingWeightsId, normalizedGaussianArray);
             cmd.SetGlobalVector(inverseTextureSizeId, new Vector4(1f / width, 1f / height, 0, 0));
+            cmd.SetGlobalColor(tintId, component.tint.value);
             context.ExecuteCommandBuffer(cmd);
-
-            // 1パスでブラーを掛けた後にカメラのテクスチャに出力する
-            var renderer = renderingData.cameraData.renderer;
+            
             cmd.Clear();
-            cmd.Blit(renderer.cameraColorTarget, sample1Id, material, 0);
-            cmd.Blit(sample1Id, renderer.cameraColorTarget);
-
+            // 輝度抽出
+            cmd.Blit(renderer.cameraColorTarget, luminanceId, material, 0);
+            // 1パスで輝度テクスチャにブラーを掛ける
+            cmd.Blit(luminanceId, sample1Id, material, 1);
+            // ブラーを掛けた結果をカメラのターゲットと加算合成する
+            cmd.Blit(sample1Id, renderer.cameraColorTarget, material, 4);
+            
             // テクスチャを解放
+            cmd.ReleaseTemporaryRT(luminanceId);
             cmd.ReleaseTemporaryRT(sample1Id);
             context.ExecuteCommandBuffer(cmd);
 
@@ -114,17 +129,26 @@ namespace Gamu2059.hlsl_grimoire.ch10_03 {
         private void Exec2PassBlur(
             ref ScriptableRenderContext context,
             ref RenderingData renderingData,
-            CustomGaussianBlur component) {
+            CustomBloom component) {
             var cmd = CommandBufferPool.Get(renderTag);
 
+            var renderer = renderingData.cameraData.renderer;
+            var cameraDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+            
             // テクスチャを確保
-            var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+            cmd.GetTemporaryRT(luminanceId, cameraDescriptor.width, cameraDescriptor.height, 0, FilterMode.Bilinear, RenderTextureFormat.ARGBHalf);
+            
             var downSamplingRate = component.downSamplingRate.value;
-            var width = (int) (cameraTargetDescriptor.width * downSamplingRate);
-            var height = (int) (cameraTargetDescriptor.height * downSamplingRate);
+            var width = (int) (cameraDescriptor.width * downSamplingRate);
+            var height = (int) (cameraDescriptor.height * downSamplingRate);
             var descriptor = new RenderTextureDescriptor(width, height, RenderTextureFormat.ARGB32);
             cmd.GetTemporaryRT(sample1Id, descriptor);
             cmd.GetTemporaryRT(sample2Id, descriptor);
+            
+            // 輝度テクスチャの初期化
+            cmd.SetRenderTarget(luminanceId);
+            cmd.ClearRenderTarget(false, true, Color.black);
+            context.ExecuteCommandBuffer(cmd);
 
             // パラメータを計算
             var samplingCount = component.samplingCount.value;
@@ -132,21 +156,26 @@ namespace Gamu2059.hlsl_grimoire.ch10_03 {
             var normalizedGaussianArray = Calc2PassNormalizedGaussianArray(samplingCount, distribution);
 
             // パラメータをシェーダに送信
+            cmd.Clear();
             cmd.SetGlobalFloat(lerpId, component.lerp.value);
             cmd.SetGlobalInt(samplingCountId, samplingCount);
             cmd.SetGlobalFloat(samplingSpaceId, component.samplingSpace.value);
             cmd.SetGlobalFloatArray(samplingWeightsId, normalizedGaussianArray);
             cmd.SetGlobalVector(inverseTextureSizeId, new Vector4(1f / width, 1f / height, 0, 0));
+            cmd.SetGlobalColor(tintId, component.tint.value);
             context.ExecuteCommandBuffer(cmd);
-
-            // 2パスでブラーを掛けた後にカメラのテクスチャに出力する
-            var renderer = renderingData.cameraData.renderer;
+            
             cmd.Clear();
-            cmd.Blit(renderer.cameraColorTarget, sample1Id, material, 1);
-            cmd.Blit(sample1Id, sample2Id, material, 2);
-            cmd.Blit(sample2Id, renderer.cameraColorTarget, material, 3);
-
+            // 輝度抽出
+            cmd.Blit(renderer.cameraColorTarget, luminanceId, material, 0);
+            // 2パスで輝度テクスチャにブラーを掛ける
+            cmd.Blit(luminanceId, sample1Id, material, 2);
+            cmd.Blit(sample1Id, sample2Id, material, 3);
+            // ブラーを掛けた結果をカメラのターゲットと加算合成する
+            cmd.Blit(sample2Id, renderer.cameraColorTarget, material, 4);
+            
             // テクスチャを解放
+            cmd.ReleaseTemporaryRT(luminanceId);
             cmd.ReleaseTemporaryRT(sample1Id);
             cmd.ReleaseTemporaryRT(sample2Id);
             context.ExecuteCommandBuffer(cmd);

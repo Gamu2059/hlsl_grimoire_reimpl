@@ -16,7 +16,7 @@ MonoBehaviour:
   m_AdvancedMode: 0
   threshold:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.5
     min: 0
   intensity:
     m_OverrideState: 1
@@ -24,7 +24,7 @@ MonoBehaviour:
     min: 0
   scatter:
     m_OverrideState: 0
-    m_Value: 0.7
+    m_Value: 1
     min: 0
     max: 1
   clamp:
@@ -32,8 +32,8 @@ MonoBehaviour:
     m_Value: 65472
     min: 0
   tint:
-    m_OverrideState: 0
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_OverrideState: 1
+    m_Value: {r: 0.24719654, g: 0.94592077, b: 0.9528302, a: 1}
     hdr: 0
     showAlpha: 0
     showEyeDropper: 1
@@ -41,8 +41,8 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 0
   skipIterations:
-    m_OverrideState: 0
-    m_Value: 1
+    m_OverrideState: 1
+    m_Value: 5
     min: 0
     max: 16
   dirtTexture:
@@ -88,6 +88,51 @@ MonoBehaviour:
   rounded:
     m_OverrideState: 0
     m_Value: 0
+--- !u!114 &-5692429070444283678
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3feee8b8b7b5374290e4a19873d88c2, type: 3}
+  m_Name: CustomBloom
+  m_EditorClassIdentifier: 
+  active: 0
+  m_AdvancedMode: 0
+  lerp:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 1
+  samplingCount:
+    m_OverrideState: 1
+    m_Value: 3
+    min: 1
+    max: 3
+  samplingSpace:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+  distribution:
+    m_OverrideState: 1
+    m_Value: 5
+  downSamplingRate:
+    m_OverrideState: 1
+    m_Value: 0.5
+    min: 0.1
+    max: 1
+  tint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    hdr: 0
+    showAlpha: 1
+    showEyeDropper: 1
+  use2pass:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &-4731304611350472942
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -123,9 +168,11 @@ MonoBehaviour:
   - {fileID: 849379129802519247}
   - {fileID: -7893295128165547882}
   - {fileID: -7011558710299706105}
-  - {fileID: 6834126032672037944}
   - {fileID: -4731304611350472942}
+  - {fileID: 6834126032672037944}
   - {fileID: 8254482884799307269}
+  - {fileID: -5692429070444283678}
+  - {fileID: 5664396643634331319}
 --- !u!114 &849379129802519247
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -143,6 +190,60 @@ MonoBehaviour:
   mode:
     m_OverrideState: 1
     m_Value: 2
+--- !u!114 &5664396643634331319
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65351ed41482fca4eb5ed081aea5463d, type: 3}
+  m_Name: CustomKawaseBloom
+  m_EditorClassIdentifier: 
+  active: 1
+  m_AdvancedMode: 0
+  lerp:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 1
+  samplingCount:
+    m_OverrideState: 1
+    m_Value: 3
+    min: 1
+    max: 3
+  samplingSpace:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+  samplingSpaceRate:
+    m_OverrideState: 1
+    m_Value: 1.2
+    min: 1
+  distribution:
+    m_OverrideState: 1
+    m_Value: 5
+  downSamplingRate:
+    m_OverrideState: 1
+    m_Value: 0.5
+    min: 0.1
+    max: 1
+  iterationCount:
+    m_OverrideState: 1
+    m_Value: 5
+    min: 1
+    max: 5
+  tint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0, b: 0, a: 1}
+    hdr: 0
+    showAlpha: 1
+    showEyeDropper: 1
+  use2pass:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &6834126032672037944
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -169,7 +270,7 @@ MonoBehaviour:
     max: 3
   samplingSpace:
     m_OverrideState: 1
-    m_Value: 3
+    m_Value: 1
     min: 0
 --- !u!114 &8254482884799307269
 MonoBehaviour:
@@ -197,11 +298,11 @@ MonoBehaviour:
     max: 3
   samplingSpace:
     m_OverrideState: 1
-    m_Value: 3
+    m_Value: 1
     min: 0
   distribution:
     m_OverrideState: 1
-    m_Value: 3
+    m_Value: 5
   downSamplingRate:
     m_OverrideState: 1
     m_Value: 0.5

@@ -1,4 +1,4 @@
-﻿Shader "Hidden/hlsl_grimoire/sample10_03/gaussian_blur"
+﻿Shader "Hidden/hlsl_grimoire/sample10_04/bloom"
 {
     Properties
     {
@@ -31,12 +31,28 @@
 
         Pass
         {
-            Name "1pass Gaussian Blur"
+            Name "Bloom Luminance Extract"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
-            float _Lerp;
+            half4 frag(Varyings i) : SV_Target
+            {
+                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_LinearClamp, i.uv);
+                float t = dot(color.xyz, float3(0.2125f, 0.7154f, 0.0721f));
+                clip(t - 1.f);
+                return color;
+            }
+            ENDHLSL
+        }
+        
+        Pass
+        {
+            Name "1pass Bloom Blur"
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
             int _SamplingCount;
             float _SamplingSpace;
             float _SamplingWeights[4];
@@ -64,14 +80,14 @@
                     blurColor += SAMPLE_TEXTURE2D_X(_MainTex, sampler_LinearClamp, i.uv - uv) * _SamplingWeights[y];
                 }
 
-                return lerp(color, blurColor, _Lerp);
+                return blurColor;
             }
             ENDHLSL
         }
 
         Pass
         {
-            Name "2pass Gaussian X Blur"
+            Name "2pass Bloom X Blur"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -100,7 +116,7 @@
 
         Pass
         {
-            Name "2pass Gaussian Y Blur"
+            Name "2pass Bloom Y Blur"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -129,21 +145,19 @@
 
         Pass
         {
-            Name "2pass Gaussian Blur Combine"
-            Blend SrcAlpha OneMinusSrcAlpha
+            Name "Bloom Combine"
+            // 加算合成なので、Blendの指定を忘れずに
+            Blend One One
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
-            TEXTURE2D(_CameraColorTexture);
             float _Lerp;
+            half4 _Tint;
 
             half4 frag(Varyings i) : SV_Target
             {
-                // half4 color = SAMPLE_TEXTURE2D(_CameraColorTexture, sampler_LinearClamp, i.uv);
-                half4 blurColor = SAMPLE_TEXTURE2D(_MainTex, sampler_LinearClamp, i.uv);
-                blurColor.a *= _Lerp;
-                return blurColor;
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_LinearClamp, i.uv) * _Tint * _Lerp;
             }
             ENDHLSL
         }

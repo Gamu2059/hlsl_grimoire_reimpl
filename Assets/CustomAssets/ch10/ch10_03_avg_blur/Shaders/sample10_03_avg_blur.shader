@@ -4,11 +4,30 @@
     {
         _MainTex ("Texture", 2D) = "white" {}
     }
+
+    HLSLINCLUDE
+    #include "Library/PackageCache/com.unity.render-pipelines.universal@10.5.0/Shaders/PostProcessing/Common.hlsl"
+    CBUFFER_START(UnityPerMaterial)
+    TEXTURE2D(_MainTex);
+    float4 _MainTex_ST;
+    float4 _MainTex_TexelSize;
+    CBUFFER_END
+
+    Varyings vert(Attributes i)
+    {
+        Varyings o;
+        o.positionCS = TransformObjectToHClip(i.positionOS);
+        o.uv = TRANSFORM_TEX(i.uv, _MainTex);
+        return o;
+    }
+    ENDHLSL
+
     SubShader
     {
         Cull Off
         ZWrite Off
         ZTest Off
+        Blend One Zero
 
         Pass
         {
@@ -16,27 +35,10 @@
             #pragma vertex vert
             #pragma fragment frag
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Library/PackageCache/com.unity.render-pipelines.universal@10.5.0/Shaders/PostProcessing/Common.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-            TEXTURE2D(_MainTex);
-            float4 _MainTex_ST;
-            float4 _MainTex_TexelSize;
-            CBUFFER_END
-
             float _Lerp;
             int _SamplingCount;
-            int _SamplingSpace;
+            float _SamplingSpace;
             half _AvgDivFactor;
-
-            Varyings vert(Attributes i)
-            {
-                Varyings o;
-                o.positionCS = TransformObjectToHClip(i.positionOS);
-                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
-                return o;
-            }
 
             half4 frag(Varyings i) : SV_Target
             {
