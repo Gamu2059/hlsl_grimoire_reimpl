@@ -79,7 +79,8 @@ MonoBehaviour:
   - {fileID: -8233037918299627349}
   - {fileID: 6641247391008836044}
   - {fileID: -2584637311544346279}
-  m_RendererFeatureMap: 52b8771e4fadce5cb3769e6ae6c8feed2b455cc121550391abe06d41a25fbe8dcc4992b650732a5c59b92d240f8621dc
+  - {fileID: 220904021632748049}
+  m_RendererFeatureMap: 52b8771e4fadce5cb3769e6ae6c8feed2b455cc121550391abe06d41a25fbe8dcc4992b650732a5c59b92d240f8621dc110ae08a09cf1003
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
@@ -108,6 +109,21 @@ MonoBehaviour:
   m_ShadowTransparentReceive: 0
   m_RenderingMode: 0
   m_AccurateGbufferNormals: 0
+--- !u!114 &220904021632748049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0624bf6a45618354bb67dea58da68199, type: 3}
+  m_Name: CustomHexBokehBlur
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: ec7744c9677bcde4ba8dd630a861b79e, type: 3}
 --- !u!114 &6641247391008836044
 MonoBehaviour:
   m_ObjectHideFlags: 0

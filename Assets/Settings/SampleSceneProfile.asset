@@ -174,6 +174,7 @@ MonoBehaviour:
   - {fileID: -5692429070444283678}
   - {fileID: 5664396643634331319}
   - {fileID: 3191383480850373171}
+  - {fileID: 4959002940844426286}
 --- !u!114 &849379129802519247
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -203,7 +204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 155f5382577777a4abd69c1c6fb15f4c, type: 3}
   m_Name: CustomDepthOfField
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   m_AdvancedMode: 0
   lerp:
     m_OverrideState: 1
@@ -229,7 +230,7 @@ MonoBehaviour:
     max: 1
   focalDistance:
     m_OverrideState: 1
-    m_Value: 5.73
+    m_Value: 5
     min: 0
   focalWidth:
     m_OverrideState: 1
@@ -239,6 +240,38 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 1
     min: 0
+--- !u!114 &4959002940844426286
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1ffd95f820a92343be6579117c9da53, type: 3}
+  m_Name: CustomHexBokehBlur
+  m_EditorClassIdentifier: 
+  active: 0
+  m_AdvancedMode: 0
+  lerp:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 1
+  samplingCount:
+    m_OverrideState: 1
+    m_Value: 5
+    min: 1
+  samplingSpace:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+  downSamplingRate:
+    m_OverrideState: 0
+    m_Value: 0.5
+    min: 0.1
+    max: 1
 --- !u!114 &5664396643634331319
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -286,7 +319,7 @@ MonoBehaviour:
     max: 5
   tint:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0, b: 0, a: 1}
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
     hdr: 0
     showAlpha: 1
     showEyeDropper: 1
