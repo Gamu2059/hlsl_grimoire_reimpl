@@ -30,6 +30,21 @@ MonoBehaviour:
   m_Active: 1
   settings:
     shader: {fileID: 4800000, guid: 9482d68a7a9f14d3188391b84d8635f5, type: 3}
+--- !u!114 &-2584637311544346279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373c5b8fffb3edb4aa9e6cf3484aa88c, type: 3}
+  m_Name: CustomDepthOfField
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 5993f30881deaf647b36cb1e1433295e, type: 3}
 --- !u!114 &-1297378750679320909
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63,7 +78,8 @@ MonoBehaviour:
   - {fileID: -7997454909813537493}
   - {fileID: -8233037918299627349}
   - {fileID: 6641247391008836044}
-  m_RendererFeatureMap: 52b8771e4fadce5cb3769e6ae6c8feed2b455cc121550391abe06d41a25fbe8dcc4992b650732a5c
+  - {fileID: -2584637311544346279}
+  m_RendererFeatureMap: 52b8771e4fadce5cb3769e6ae6c8feed2b455cc121550391abe06d41a25fbe8dcc4992b650732a5c59b92d240f8621dc
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
