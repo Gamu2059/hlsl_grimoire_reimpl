@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Gamu2059.hlsl_grimoire.ch10_04 {
+namespace Gamu2059.hlsl_grimoire.ch10_05 {
     /// <summary>
     /// 川瀬式ブルームの実装
     /// </summary>
@@ -35,7 +35,7 @@ namespace Gamu2059.hlsl_grimoire.ch10_04 {
         private readonly Material material;
 
         public CustomKawaseBloomPass(CreateParam param) {
-            profilingSampler = new ProfilingSampler(nameof(CustomBloom));
+            profilingSampler = new ProfilingSampler(nameof(CustomKawaseBloom));
             renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
             material = CoreUtils.CreateEngineMaterial(param.shader);
         }

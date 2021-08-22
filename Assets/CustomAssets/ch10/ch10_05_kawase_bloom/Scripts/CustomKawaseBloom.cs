@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Gamu2059.hlsl_grimoire.ch10_04 {
+namespace Gamu2059.hlsl_grimoire.ch10_05 {
     /// <summary>
     /// 川瀬式ブルームのパラメータ.
     /// 参考書ではポストプロセスとして扱われているので,RenderFeatureで設定するのではなく,VolumeComponentとして定義している

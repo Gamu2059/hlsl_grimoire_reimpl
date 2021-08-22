@@ -1,4 +1,4 @@
-﻿Shader "Hidden/hlsl_grimoire/sample10_04/kawase_bloom"
+﻿Shader "Hidden/hlsl_grimoire/sample10_05/kawase_bloom"
 {
     Properties
     {

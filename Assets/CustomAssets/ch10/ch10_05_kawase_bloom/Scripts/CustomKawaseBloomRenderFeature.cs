@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-namespace Gamu2059.hlsl_grimoire.ch10_04 {
+namespace Gamu2059.hlsl_grimoire.ch10_05 {
     /// <summary>
     /// 川瀬式ブルームのRenderFeature
     /// </summary>
