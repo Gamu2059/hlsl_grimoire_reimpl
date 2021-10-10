@@ -12,15 +12,21 @@ Shader "hlsl_grimoire/ch14/lit"
 
     SubShader
     {
-        Tags {"Queue" = "Geometry" "RenderType" = "Opaque" }
+        Tags
+        {
+            "Queue" = "Geometry" "RenderType" = "Opaque"
+        }
 
         Blend SrcAlpha OneMinusSrcAlpha
-//        Cull Off
-//        ZWrite Off
+        //        Cull Off
+        //        ZWrite Off
 
         Pass
         {
-            Tags { "LightMode" = "CustomCh14" }
+            Tags
+            {
+                "LightMode" = "CustomCh14"
+            }
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -65,6 +71,60 @@ Shader "hlsl_grimoire/ch14/lit"
                 float ldn = dot(_LightVector, i.normalWS);
                 color.rgb *= clamp(ldn, 0, 1);
                 return color;
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "CustomCh14Shadow"
+            }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "UnityCG.cginc"
+
+            struct Attributes
+            {
+                float3 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float4 lightView : TEXCOORD1;
+            };
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float4x4 _LightView;
+            float4x4 _LightProj;
+
+            Varyings vert(Attributes attributes)
+            {
+                Varyings o = (Varyings)0;
+
+                o.positionCS = UnityObjectToClipPos(attributes.positionOS);
+                o.lightView = mul(unity_ObjectToWorld, float4(attributes.positionOS, 1.0));
+                o.lightView = mul(_LightView, o.lightView);
+                o.lightView = mul(_LightProj, o.lightView);
+                o.lightView.xy = o.lightView.xy * 0.5f + 0.5f;
+                // o.positionCS = o.lightView;
+                // o.positionCS = mul(_MatLvp, mul(unity_ObjectToWorld, float4(attributes.positionOS, 1.0)));
+                o.uv = TRANSFORM_TEX(attributes.uv, _MainTex);
+                return o;
+            }
+
+            half4 frag(Varyings i) : SV_Target
+            {
+                // half4 color = tex2D(_MainTex, i.uv);
+                // clip(color.a - 0.5f);
+                return i.lightView;
             }
             ENDHLSL
         }
