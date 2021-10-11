@@ -10,9 +10,14 @@ namespace Gamu2059.hlsl_grimoire.ch14
     [CreateAssetMenu(menuName = "Custom/ch14/RenderPipelineAsset", fileName = "ch14_render_pipeline_asset.asset")]
     public class CustomCh14RenderPipelineAsset : RenderPipelineAsset
     {
+        [SerializeField]
+        private Vector2Int shadowResolution;
+
+        public Vector2Int ShadowResolution => shadowResolution;
+        
         protected override RenderPipeline CreatePipeline()
         {
-            return new CustomCh14RenderPipeline();
+            return new CustomCh14RenderPipeline(this);
         }
     }
 }

@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccad789c217064a2d87a9311be86bc5a, type: 3}
   m_Name: ch14_render_pipeline_asset
   m_EditorClassIdentifier: 
+  shadowResolution: {x: 1024, y: 1024}
