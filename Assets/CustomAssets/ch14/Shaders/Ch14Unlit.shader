@@ -29,7 +29,7 @@ Shader "hlsl_grimoire/ch14/lit"
             }
 
             HLSLPROGRAM
-            #pragma vertex vert
+            #pragma vertex ShadowVert
             #pragma fragment frag
             #include "UnityCG.cginc"
 
@@ -57,15 +57,15 @@ Shader "hlsl_grimoire/ch14/lit"
             float4 _LightColor;
             float4 _LightVector;
 
-            float4x4 _LightView;
-            float4x4 _LightProj;
+            float4x4 _LvpMat;
 
             float _ShadowBias;
             float _ShadowNormalBias;
 
             sampler2D ShadowDepth;
+            sampler2D Depth;
 
-            Varyings vert(Attributes attributes)
+            Varyings ShadowVert(Attributes attributes)
             {
                 Varyings o = (Varyings)0;
                 o.positionCS = UnityObjectToClipPos(attributes.positionOS);
@@ -75,38 +75,55 @@ Shader "hlsl_grimoire/ch14/lit"
 
                 // シャドウマップ用
                 o.positionLVP = mul(unity_ObjectToWorld, float4(attributes.positionOS, 1.0));
-                o.positionLVP = mul(_LightView, o.positionLVP);
-                o.positionLVP = mul(_LightProj, o.positionLVP);
+                o.positionLVP = mul(_LvpMat, o.positionLVP);
 
                 return o;
             }
 
             half4 frag(Varyings i) : SV_Target
             {
-                half4 color = i.color * tex2D(_MainTex, i.uv);
-                float ldn = dot(_LightVector, i.normalWS);
-                ldn = clamp(ldn, 0, 1);
-                color.rgb *= ldn;
+                // half4 color = i.color * tex2D(_MainTex, i.uv);
+                // float ldn = dot(_LightVector, i.normalWS);
+                // ldn = clamp(ldn, 0, 1);
+                // color.rgb *= ldn;
+                //
+                // float2 shadowUV = i.positionLVP.xy / i.positionLVP.w;
+                // shadowUV = shadowUV * float2(0.5f, -0.5f) + 0.5f;
+                //
+                // if (shadowUV.x > 0.0f && shadowUV.x < 1.0f && shadowUV.y > 0.0f && shadowUV.y < 1.0f)
+                // {
+                //     float zInLVP = i.positionLVP.z / i.positionLVP.w;
+                //     float zInShadow = tex2D(ShadowDepth, shadowUV).r;
+                //     float bias = _ShadowNormalBias * tan(acos(ldn)) + _ShadowBias;
+                //     if (zInLVP < zInShadow - bias)
+                //     {
+                //         color.xyz = 0;
+                //     }
+                // }
 
-                float2 shadowUV = i.positionLVP.xy / i.positionLVP.w;
-                shadowUV = shadowUV * float2(0.5f, -0.5f) + 0.5f;
-
-                if (shadowUV.x > 0.0f && shadowUV.x < 1.0f && shadowUV.y > 0.0f && shadowUV.y < 1.0f)
-                {
-                    float zInLVP = i.positionLVP.z / i.positionLVP.w;
-                    float zInShadow = tex2D(ShadowDepth, shadowUV).r;
-                    float bias = _ShadowNormalBias * tan(acos(ldn)) + _ShadowBias;
-                    if (zInLVP < zInShadow - bias)
-                    {
-                        color.xyz = 0;
-                    }
-                }
-
-                return color;
+                half depth = SAMPLE_DEPTH_TEXTURE(Depth, i.uv);
+                return half4(depth, depth, depth, 1);
             }
             ENDHLSL
         }
+        
+        // デプス描画パス
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "CustomCh14Depth"
+            }
+            ColorMask R
 
+            HLSLPROGRAM
+            #include "Ch14Depth.hlsl"
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
+            ENDHLSL
+        }
+
+        // シャドウ描画パス
         Pass
         {
             Tags
@@ -115,43 +132,9 @@ Shader "hlsl_grimoire/ch14/lit"
             }
 
             HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #include "UnityCG.cginc"
-
-            struct Attributes
-            {
-                float3 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                float4 lightView : TEXCOORD1;
-            };
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            float4x4 _LightView;
-            float4x4 _LightProj;
-
-            Varyings vert(Attributes attributes)
-            {
-                Varyings o = (Varyings)0;
-                o.lightView = mul(unity_ObjectToWorld, float4(attributes.positionOS, 1.0));
-                o.lightView = mul(_LightView, o.lightView);
-                o.lightView = mul(_LightProj, o.lightView);
-                o.positionCS = o.lightView;
-                o.uv = TRANSFORM_TEX(attributes.uv, _MainTex);
-                return o;
-            }
-
-            half4 frag(Varyings i) : SV_Target
-            {
-                return 1;
-            }
+            #include "Ch14Shadow.hlsl"
+            #pragma vertex ShadowVert
+            #pragma fragment ShadowFrag
             ENDHLSL
         }
     }

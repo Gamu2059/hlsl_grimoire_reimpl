@@ -10,24 +10,20 @@ namespace Gamu2059.hlsl_grimoire.ch14
     public class CustomCh14RenderPipeline : RenderPipeline
     {
         private static readonly ShaderTagId tag = new ShaderTagId("CustomCh14");
-        private static readonly ShaderTagId shadowTag = new ShaderTagId("CustomCh14Shadow");
         private static readonly int CameraColor = Shader.PropertyToID("CameraColor");
         private static readonly int CameraDepth = Shader.PropertyToID("CameraDepth");
-        private static readonly int ShadowColor = Shader.PropertyToID("ShadowColor");
-        private static readonly int ShadowDepth = Shader.PropertyToID("ShadowDepth");
-
-        private static readonly int LightViewId = Shader.PropertyToID("_LightView");
-        private static readonly int LightProjId = Shader.PropertyToID("_LightProj");
-        private static readonly int ShadowBiasId = Shader.PropertyToID("_ShadowBias");
-        private static readonly int ShadowNormalBiasId = Shader.PropertyToID("_ShadowNormalBias");
-
-        private Matrix4x4 projectionMatrix, viewMatrix;
 
         private CustomCh14RenderPipelineAsset asset;
+        private CustomCh14DepthPrePass depthPrePass;
+        private CustomCh14ShadowPass shadowPass;
 
         public CustomCh14RenderPipeline(CustomCh14RenderPipelineAsset asset)
         {
             this.asset = asset;
+            depthPrePass = new CustomCh14DepthPrePass();
+            shadowPass = new CustomCh14ShadowPass();
+
+            GraphicsSettings.useScriptableRenderPipelineBatching = true;
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -48,13 +44,37 @@ namespace Gamu2059.hlsl_grimoire.ch14
 
                 var cullingResults = context.Cull(ref cullingParameters);
 
-
+                // デプスの処理
+                {
+                    var prop = new CustomCh14DepthPrePass.Property
+                    {
+                        context = context,
+                        commandBuffer = cmd,
+                        cullingResults = cullingResults,
+                        camera = camera,
+                    };
+                    depthPrePass.SetupProperty(prop);
+                    depthPrePass.SetupRT();
+                    depthPrePass.Draw();
+                }
+                
                 // ライト情報のセットアップ
                 var mainLightIndex = SetupLights(context, cmd, cullingResults);
+                
+                // シャドウの処理
                 if (mainLightIndex >= 0)
                 {
-                    SetupShadowRenderTexture(context, cmd);
-                    DrawShadow(context, cmd, cullingResults, mainLightIndex);
+                    var prop = new CustomCh14ShadowPass.Property
+                    {
+                        context = context,
+                        commandBuffer = cmd,
+                        cullingResults = cullingResults,
+                        resolution = asset.ShadowResolution,
+                        mainLightIndex = mainLightIndex,
+                    };
+                    shadowPass.SetupProperty(prop);
+                    shadowPass.SetupRT();
+                    shadowPass.Draw();
                 }
 
                 // RenderTexture作成
@@ -91,9 +111,11 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 // CameraTargetに描画
                 RestoreCameraTarget(context, cmd);
 
+                depthPrePass.CleanupRT();
+                
                 if (mainLightIndex >= 0)
                 {
-                    CleanupShadowRenderTexture(context, cmd);
+                    shadowPass.CleanupRT();
                 }
 
                 // RenderTexture解放
@@ -143,25 +165,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
             context.ExecuteCommandBuffer(cmd);
         }
 
-        private void SetupShadowRenderTexture(ScriptableRenderContext context, CommandBuffer cmd)
-        {
-            var width = asset.ShadowResolution.x;
-            var height = asset.ShadowResolution.y;
-            cmd.Clear();
-            cmd.GetTemporaryRT(ShadowColor, width, height, 0, FilterMode.Bilinear, RenderTextureFormat.Default);
-            cmd.GetTemporaryRT(ShadowDepth, width, height, 32, FilterMode.Point, RenderTextureFormat.Depth);
-            cmd.SetRenderTarget(color: ShadowColor, depth: ShadowDepth);
-            cmd.ClearRenderTarget(true, true, Color.black, 1.0f);
-            context.ExecuteCommandBuffer(cmd);
-        }
-
-        private void CleanupShadowRenderTexture(ScriptableRenderContext context, CommandBuffer cmd)
-        {
-            cmd.Clear();
-            cmd.ReleaseTemporaryRT(ShadowDepth);
-            cmd.ReleaseTemporaryRT(ShadowColor);
-            context.ExecuteCommandBuffer(cmd);
-        }
+        
 
         private int SetupLights(ScriptableRenderContext context, CommandBuffer cmd,
             CullingResults cullingResults)
@@ -204,63 +208,14 @@ namespace Gamu2059.hlsl_grimoire.ch14
             return lightIndex;
         }
 
-        /// <summary>
-        /// 影を描画する
-        /// </summary>
-        private void DrawShadow(ScriptableRenderContext context, CommandBuffer cmd,
-            CullingResults cullingResults, int mainLightIndex)
-        {
-            if (mainLightIndex < 0)
-            {
-                return;
-            }
-
-            var light = cullingResults.visibleLights[mainLightIndex];
-            if (!cullingResults.GetShadowCasterBounds(mainLightIndex, out var bound))
-            {
-                return;
-            }
-
-            projectionMatrix = Matrix4x4.Ortho(-10, 10, -10, 10, 0f, 50f);
-            projectionMatrix = GL.GetGPUProjectionMatrix(projectionMatrix, true);
-            viewMatrix = Matrix4x4.Inverse(light.localToWorldMatrix);
-            viewMatrix.m20 *= -1;
-            viewMatrix.m21 *= -1;
-            viewMatrix.m22 *= -1;
-            viewMatrix.m23 *= -1;
-
-            cmd.Clear();
-            cmd.SetRenderTarget(color: ShadowColor, depth: ShadowDepth);
-            cmd.SetGlobalMatrix(LightViewId, viewMatrix);
-            cmd.SetGlobalMatrix(LightProjId, projectionMatrix);
-            cmd.SetGlobalFloat(ShadowBiasId, light.light.shadowBias);
-            cmd.SetGlobalFloat(ShadowNormalBiasId, light.light.shadowNormalBias);
-            context.ExecuteCommandBuffer(cmd);
-
-            // Filtering, Sort
-            var sortingSettings = new SortingSettings
-            {
-                criteria = SortingCriteria.CommonOpaque,
-                worldToCameraMatrix = viewMatrix,
-                distanceMetric = DistanceMetric.Orthographic
-            };
-            var settings = new DrawingSettings(shadowTag, sortingSettings);
-            var filterSettings = new FilteringSettings(
-                new RenderQueueRange(0, (int) RenderQueue.GeometryLast)
-            );
-
-            // Rendering
-            context.DrawRenderers(cullingResults, ref settings, ref filterSettings);
-        }
-
         private void DrawOpaque(ScriptableRenderContext context, Camera camera, CommandBuffer cmd,
             CullingResults cullingResults)
         {
             cmd.Clear();
             cmd.SetRenderTarget(color: CameraColor, depth: CameraDepth);
-            cmd.SetGlobalMatrix(LightViewId, viewMatrix);
-            cmd.SetGlobalMatrix(LightProjId, projectionMatrix);
-            cmd.SetGlobalTexture(ShadowDepth, ShadowDepth);
+            cmd.SetGlobalMatrix(CustomCh14ShadowPass.LvpMatId, shadowPass.LvpMatrix);
+            cmd.SetGlobalTexture(CustomCh14ShadowPass.DepthTexId, CustomCh14ShadowPass.DepthTexId);
+            cmd.SetGlobalTexture(CustomCh14DepthPrePass.DepthTexId, CustomCh14DepthPrePass.DepthTexId);
             context.ExecuteCommandBuffer(cmd);
 
             // Filtering, Sort
@@ -301,41 +256,6 @@ namespace Gamu2059.hlsl_grimoire.ch14
             cmd.SetRenderTarget(cameraTarget);
             cmd.Blit(CameraColor, cameraTarget);
             context.ExecuteCommandBuffer(cmd);
-        }
-
-        private Matrix4x4 CreateLvpMatrix(VisibleLight visibleLight, Vector2 size, float near, float far)
-        {
-            var width = size.x * 0.5f;
-            var height = size.y * 0.5f;
-            var projectionMatrix = Matrix4x4.Ortho(-width, width, height, -height, near, far);
-            var viewMatrix = Matrix4x4.Inverse(visibleLight.localToWorldMatrix);
-            return GetShadowTransform(projectionMatrix, viewMatrix);
-        }
-
-        private Matrix4x4 GetShadowTransform(Matrix4x4 proj, Matrix4x4 view)
-        {
-            // Currently CullResults ComputeDirectionalShadowMatricesAndCullingPrimitives doesn't
-            // apply z reversal to projection matrix. We need to do it manually here.
-            if (SystemInfo.usesReversedZBuffer)
-            {
-                proj.m20 = -proj.m20;
-                proj.m21 = -proj.m21;
-                proj.m22 = -proj.m22;
-                proj.m23 = -proj.m23;
-            }
-
-            Matrix4x4 worldToShadow = proj * view;
-
-            var textureScaleAndBias = Matrix4x4.identity;
-            textureScaleAndBias.m00 = 0.5f;
-            textureScaleAndBias.m11 = 0.5f;
-            textureScaleAndBias.m22 = 0.5f;
-            textureScaleAndBias.m03 = 0.5f;
-            textureScaleAndBias.m23 = 0.5f;
-            textureScaleAndBias.m13 = 0.5f;
-
-            // Apply texture scale and offset to save a MAD in shader.
-            return textureScaleAndBias * worldToShadow;
         }
     }
 }
