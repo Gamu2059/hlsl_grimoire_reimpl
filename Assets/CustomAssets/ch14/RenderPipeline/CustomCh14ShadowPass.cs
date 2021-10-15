@@ -8,32 +8,13 @@ namespace Gamu2059.hlsl_grimoire.ch14
     /// </summary>
     public class CustomCh14ShadowPass
     {
-        /// <summary>
-        /// シャドウプロパティ
-        /// </summary>
-        public struct Property
-        {
-            public ScriptableRenderContext context;
-            public CommandBuffer commandBuffer;
-            public CullingResults cullingResults;
-            public Vector2Int resolution;
-            public int mainLightIndex;
-        }
-        
-        public static readonly ShaderTagId ShadowTag = new ShaderTagId("CustomCh14Shadow");
-        public static readonly int ColorTexId = Shader.PropertyToID("ShadowColor");
-        public static readonly int DepthTexId = Shader.PropertyToID("ShadowDepth");
-        public static readonly int LvpMatId = Shader.PropertyToID("_LvpMat");
-        public static readonly int BiasId = Shader.PropertyToID("_ShadowBias");
-        public static readonly int NormalBiasId = Shader.PropertyToID("_ShadowNormalBias");
-
-        private Property property;
+        private CustomCh14Property.Property property;
         public Matrix4x4 LvpMatrix { get; private set; }
 
         /// <summary>
         /// シャドウプロパティのセットアップ
         /// </summary>
-        public void SetupProperty(Property property)
+        public void SetupProperty(CustomCh14Property.Property property)
         {
             this.property = property;
         }
@@ -45,13 +26,13 @@ namespace Gamu2059.hlsl_grimoire.ch14
         {
             var cmd = property.commandBuffer;
             var context = property.context;
-            var w = property.resolution.x;
-            var h = property.resolution.y;
+            var w = property.shadowResolution.x;
+            var h = property.shadowResolution.y;
             
             cmd.Clear();
-            cmd.GetTemporaryRT(ColorTexId, w, h, 0, FilterMode.Bilinear, RenderTextureFormat.Default);
-            cmd.GetTemporaryRT(DepthTexId, w, h, 32, FilterMode.Point, RenderTextureFormat.Depth);
-            cmd.SetRenderTarget(color: ColorTexId, depth: DepthTexId);
+            cmd.GetTemporaryRT(CustomCh14Property.ShadowColorTexId, w, h, 0, FilterMode.Bilinear, RenderTextureFormat.Default);
+            cmd.GetTemporaryRT(CustomCh14Property.ShadowDepthTexId, w, h, 32, FilterMode.Point, RenderTextureFormat.Depth);
+            cmd.SetRenderTarget(CustomCh14Property.ShadowColorTex, CustomCh14Property.ShadowDepthTex);
             cmd.ClearRenderTarget(true, true, Color.black, 1.0f);
             context.ExecuteCommandBuffer(cmd);
         }
@@ -65,8 +46,8 @@ namespace Gamu2059.hlsl_grimoire.ch14
             var context = property.context;
             
             cmd.Clear();
-            cmd.ReleaseTemporaryRT(DepthTexId);
-            cmd.ReleaseTemporaryRT(ColorTexId);
+            cmd.ReleaseTemporaryRT(CustomCh14Property.ShadowDepthTexId);
+            cmd.ReleaseTemporaryRT(CustomCh14Property.ShadowColorTexId);
             context.ExecuteCommandBuffer(cmd);
         }
 
@@ -103,10 +84,10 @@ namespace Gamu2059.hlsl_grimoire.ch14
             LvpMatrix = projectionMatrix * viewMatrix;
 
             cmd.Clear();
-            cmd.SetRenderTarget(color: ColorTexId, depth: DepthTexId);
-            cmd.SetGlobalMatrix(LvpMatId, LvpMatrix);
-            cmd.SetGlobalFloat(BiasId, light.light.shadowBias);
-            cmd.SetGlobalFloat(NormalBiasId, light.light.shadowNormalBias);
+            cmd.SetRenderTarget(CustomCh14Property.ShadowColorTex, CustomCh14Property.ShadowDepthTex);
+            cmd.SetGlobalMatrix(CustomCh14Property.LvpMatId, LvpMatrix);
+            cmd.SetGlobalFloat(CustomCh14Property.ShadowBiasId, light.light.shadowBias);
+            cmd.SetGlobalFloat(CustomCh14Property.ShadowNormalBiasId, light.light.shadowNormalBias);
             context.ExecuteCommandBuffer(cmd);
 
             var sortingSettings = new SortingSettings
@@ -115,7 +96,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 worldToCameraMatrix = viewMatrix,
                 distanceMetric = DistanceMetric.Orthographic
             };
-            var settings = new DrawingSettings(ShadowTag, sortingSettings);
+            var settings = new DrawingSettings(CustomCh14Property.ShadowTag, sortingSettings);
             var filterSettings = new FilteringSettings(
                 new RenderQueueRange(0, (int) RenderQueue.GeometryLast)
             );

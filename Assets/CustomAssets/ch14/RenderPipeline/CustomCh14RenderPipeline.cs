@@ -14,16 +14,18 @@ namespace Gamu2059.hlsl_grimoire.ch14
         private static readonly int CameraDepth = Shader.PropertyToID("CameraDepth");
 
         private CustomCh14RenderPipelineAsset asset;
-        private CustomCh14DepthPrePass depthPrePass;
+        private CustomCh14PreDepthPass depthPreDepthPass;
         private CustomCh14ShadowPass shadowPass;
         private CustomCh14GBufferPass gBufferPass;
+        private CustomCh14DeferredLightingPass deferredLightingPass;
 
         public CustomCh14RenderPipeline(CustomCh14RenderPipelineAsset asset)
         {
             this.asset = asset;
-            depthPrePass = new CustomCh14DepthPrePass();
+            depthPreDepthPass = new CustomCh14PreDepthPass();
             shadowPass = new CustomCh14ShadowPass();
             gBufferPass = new CustomCh14GBufferPass();
+            deferredLightingPass = new CustomCh14DeferredLightingPass();
 
             GraphicsSettings.useScriptableRenderPipelineBatching = true;
         }
@@ -45,53 +47,44 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 }
 
                 var cullingResults = context.Cull(ref cullingParameters);
-                
+
                 // ライト情報のセットアップ
                 var mainLightIndex = SetupLights(context, cmd, cullingResults);
-                
+
+                // プロパティデータの作成
+                var prop = new CustomCh14Property.Property
+                {
+                    context = context,
+                    commandBuffer = cmd,
+                    camera = camera,
+                    cullingResults = cullingResults,
+                    shadowResolution = asset.ShadowResolution,
+                    cameraResolution = GetCameraResolution(camera),
+                    mainLightIndex = mainLightIndex,
+                };
+
                 // シャドウの処理
                 if (mainLightIndex >= 0)
                 {
-                    var prop = new CustomCh14ShadowPass.Property
-                    {
-                        context = context,
-                        commandBuffer = cmd,
-                        cullingResults = cullingResults,
-                        resolution = asset.ShadowResolution,
-                        mainLightIndex = mainLightIndex,
-                    };
                     shadowPass.SetupProperty(prop);
                     shadowPass.SetupRT();
                     shadowPass.Draw();
                 }
 
                 // デプスの処理
-                {
-                    var prop = new CustomCh14DepthPrePass.Property
-                    {
-                        context = context,
-                        commandBuffer = cmd,
-                        cullingResults = cullingResults,
-                        camera = camera,
-                    };
-                    depthPrePass.SetupProperty(prop);
-                    depthPrePass.SetupRT();
-                    depthPrePass.Draw();
-                }
-                
+                depthPreDepthPass.SetupProperty(prop);
+                depthPreDepthPass.SetupRT();
+                depthPreDepthPass.Draw();
+
                 // GBufferの処理
-                {
-                    var prop = new CustomCh14GBufferPass.Property
-                    {
-                        context = context,
-                        commandBuffer = cmd,
-                        cullingResults = cullingResults,
-                        camera = camera,
-                    };
-                    gBufferPass.SetupProperty(prop);
-                    gBufferPass.SetupRT();
-                    gBufferPass.Draw();
-                }
+                gBufferPass.SetupProperty(prop);
+                gBufferPass.SetupRT();
+                gBufferPass.Draw();
+                
+                // ディファードライティングの処理
+                deferredLightingPass.SetupProperty(prop);
+                deferredLightingPass.SetupRT();
+                deferredLightingPass.Draw();
 
                 // RenderTexture作成
                 SetupCameraRenderTexture(context, camera, cmd);
@@ -127,8 +120,9 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 // CameraTargetに描画
                 RestoreCameraTarget(context, cmd);
 
+                deferredLightingPass.CleanupRT();
                 gBufferPass.CleanupRT();
-                depthPrePass.CleanupRT();
+                depthPreDepthPass.CleanupRT();
                 if (mainLightIndex >= 0)
                 {
                     shadowPass.CleanupRT();
@@ -181,7 +175,6 @@ namespace Gamu2059.hlsl_grimoire.ch14
             context.ExecuteCommandBuffer(cmd);
         }
 
-        
 
         private int SetupLights(ScriptableRenderContext context, CommandBuffer cmd,
             CullingResults cullingResults)
@@ -227,23 +220,23 @@ namespace Gamu2059.hlsl_grimoire.ch14
         private void DrawOpaque(ScriptableRenderContext context, Camera camera, CommandBuffer cmd,
             CullingResults cullingResults)
         {
-            cmd.Clear();
-            cmd.SetRenderTarget(color: CameraColor, depth: CameraDepth);
-            cmd.SetGlobalMatrix(CustomCh14ShadowPass.LvpMatId, shadowPass.LvpMatrix);
-            cmd.SetGlobalTexture(CustomCh14ShadowPass.DepthTexId, CustomCh14ShadowPass.DepthTexId);
-            cmd.SetGlobalTexture(CustomCh14DepthPrePass.DepthTexId, CustomCh14DepthPrePass.DepthTexId);
-            context.ExecuteCommandBuffer(cmd);
-
-            // Filtering, Sort
-            var sortingSettings = new SortingSettings(camera) {criteria = SortingCriteria.CommonOpaque};
-            var settings = new DrawingSettings(tag, sortingSettings);
-            var filterSettings = new FilteringSettings(
-                new RenderQueueRange(0, (int) RenderQueue.GeometryLast),
-                camera.cullingMask
-            );
-
-            // Rendering
-            context.DrawRenderers(cullingResults, ref settings, ref filterSettings);
+            // cmd.Clear();
+            // cmd.SetRenderTarget(color: CameraColor, depth: CameraDepth);
+            // cmd.SetGlobalMatrix(CustomCh14ShadowPass.LvpMatId, shadowPass.LvpMatrix);
+            // cmd.SetGlobalTexture(CustomCh14ShadowPass.DepthTexId, CustomCh14ShadowPass.DepthTexId);
+            // cmd.SetGlobalTexture(CustomCh14PreDepthPass.DepthTexId, CustomCh14PreDepthPass.DepthTexId);
+            // context.ExecuteCommandBuffer(cmd);
+            //
+            // // Filtering, Sort
+            // var sortingSettings = new SortingSettings(camera) {criteria = SortingCriteria.CommonOpaque};
+            // var settings = new DrawingSettings(tag, sortingSettings);
+            // var filterSettings = new FilteringSettings(
+            //     new RenderQueueRange(0, (int) RenderQueue.GeometryLast),
+            //     camera.cullingMask
+            // );
+            //
+            // // Rendering
+            // context.DrawRenderers(cullingResults, ref settings, ref filterSettings);
         }
 
         private void DrawTransparent(ScriptableRenderContext context, Camera camera, CommandBuffer cmd,
@@ -270,8 +263,25 @@ namespace Gamu2059.hlsl_grimoire.ch14
             var cameraTarget = new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
             cmd.Clear();
             cmd.SetRenderTarget(cameraTarget);
-            cmd.Blit(CameraColor, cameraTarget);
+            cmd.Blit(CustomCh14Property.OffCameraColorTex, cameraTarget);
             context.ExecuteCommandBuffer(cmd);
+        }
+
+        /// <summary>
+        /// カメラの解像度を取得する
+        /// </summary>
+        private Vector2Int GetCameraResolution(Camera camera)
+        {
+            var width = Display.main.renderingWidth;
+            var height = Display.main.renderingHeight;
+            var targetTexture = camera.targetTexture;
+            if (targetTexture != null)
+            {
+                width = targetTexture.width;
+                height = targetTexture.height;
+            }
+
+            return new Vector2Int(width, height);
         }
     }
 }

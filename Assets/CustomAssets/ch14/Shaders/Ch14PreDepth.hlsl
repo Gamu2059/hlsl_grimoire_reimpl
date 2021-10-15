@@ -1,5 +1,5 @@
-#ifndef CH14_DEPTH
-#define CH14_DEPTH
+#ifndef CH14_PRE_DEPTH
+#define CH14_PRE_DEPTH
 #include "UnityCG.cginc"
 #endif
 
@@ -19,7 +19,7 @@ struct Varyings
 sampler2D _MainTex;
 float4 _MainTex_ST;
 
-Varyings DepthVert(Attributes attributes)
+Varyings PreDepthVert(Attributes attributes)
 {
     Varyings o = (Varyings)0;
     o.positionCS = UnityObjectToClipPos(attributes.positionOS);
@@ -27,7 +27,7 @@ Varyings DepthVert(Attributes attributes)
     return o;
 }
 
-float DepthFrag(Varyings i) : SV_Target
+float PreDepthFrag(Varyings i) : SV_Target
 {
     return 1 - Linear01Depth(length(i.positionCS.z));
 }

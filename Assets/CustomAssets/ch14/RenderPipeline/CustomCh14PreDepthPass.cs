@@ -6,25 +6,14 @@ namespace Gamu2059.hlsl_grimoire.ch14
     /// <summary>
     /// 画面全体のデプステクスチャの描画パス
     /// </summary>
-    public class CustomCh14DepthPrePass
+    public class CustomCh14PreDepthPass
     {
-        public struct Property
-        {
-            public ScriptableRenderContext context;
-            public CommandBuffer commandBuffer;
-            public CullingResults cullingResults;
-            public Camera camera;
-        }
-        
-        public static readonly ShaderTagId DepthTag = new ShaderTagId("CustomCh14Depth");
-        public static readonly int DepthTexId = Shader.PropertyToID("Depth");
-
-        private Property property;
+        private CustomCh14Property.Property property;
         
         /// <summary>
         /// デプスプロパティのセットアップ
         /// </summary>
-        public void SetupProperty(Property property)
+        public void SetupProperty(CustomCh14Property.Property property)
         {
             this.property = property;
         }
@@ -36,20 +25,12 @@ namespace Gamu2059.hlsl_grimoire.ch14
         {
             var cmd = property.commandBuffer;
             var context = property.context;
-            var camera = property.camera;
-            
-            var w = Display.main.renderingWidth;
-            var h = Display.main.renderingHeight;
-            var targetTexture = camera.targetTexture;
-            if (targetTexture != null)
-            {
-                w = targetTexture.width;
-                h = targetTexture.height;
-            }
+            var w = property.cameraResolution.x;
+            var h = property.cameraResolution.y;
             
             cmd.Clear();
-            cmd.GetTemporaryRT(DepthTexId, w, h, 16, FilterMode.Bilinear, RenderTextureFormat.RFloat);
-            cmd.SetRenderTarget(DepthTexId);
+            cmd.GetTemporaryRT(CustomCh14Property.PreDepthTexId, w, h, 16, FilterMode.Bilinear, RenderTextureFormat.RFloat);
+            cmd.SetRenderTarget(CustomCh14Property.PreDepthTex);
             cmd.ClearRenderTarget(false, true, Color.black);
             context.ExecuteCommandBuffer(cmd);
         }
@@ -63,7 +44,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
             var context = property.context;
             
             cmd.Clear();
-            cmd.ReleaseTemporaryRT(DepthTexId);
+            cmd.ReleaseTemporaryRT(CustomCh14Property.PreDepthTexId);
             context.ExecuteCommandBuffer(cmd);
         }
 
@@ -78,11 +59,11 @@ namespace Gamu2059.hlsl_grimoire.ch14
             var camera = property.camera;
             
             cmd.Clear();
-            cmd.SetRenderTarget(DepthTexId);
+            cmd.SetRenderTarget(CustomCh14Property.PreDepthTex);
             context.ExecuteCommandBuffer(cmd);
 
             var sortingSettings = new SortingSettings(camera) {criteria = SortingCriteria.CommonOpaque};
-            var settings = new DrawingSettings(DepthTag, sortingSettings);
+            var settings = new DrawingSettings(CustomCh14Property.PreDepthTag, sortingSettings);
             var filterSettings = new FilteringSettings(
                 new RenderQueueRange(0, (int) RenderQueue.GeometryLast),
                 camera.cullingMask
