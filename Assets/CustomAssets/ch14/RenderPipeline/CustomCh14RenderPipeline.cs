@@ -16,12 +16,14 @@ namespace Gamu2059.hlsl_grimoire.ch14
         private CustomCh14RenderPipelineAsset asset;
         private CustomCh14DepthPrePass depthPrePass;
         private CustomCh14ShadowPass shadowPass;
+        private CustomCh14GBufferPass gBufferPass;
 
         public CustomCh14RenderPipeline(CustomCh14RenderPipelineAsset asset)
         {
             this.asset = asset;
             depthPrePass = new CustomCh14DepthPrePass();
             shadowPass = new CustomCh14ShadowPass();
+            gBufferPass = new CustomCh14GBufferPass();
 
             GraphicsSettings.useScriptableRenderPipelineBatching = true;
         }
@@ -43,20 +45,6 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 }
 
                 var cullingResults = context.Cull(ref cullingParameters);
-
-                // デプスの処理
-                {
-                    var prop = new CustomCh14DepthPrePass.Property
-                    {
-                        context = context,
-                        commandBuffer = cmd,
-                        cullingResults = cullingResults,
-                        camera = camera,
-                    };
-                    depthPrePass.SetupProperty(prop);
-                    depthPrePass.SetupRT();
-                    depthPrePass.Draw();
-                }
                 
                 // ライト情報のセットアップ
                 var mainLightIndex = SetupLights(context, cmd, cullingResults);
@@ -75,6 +63,34 @@ namespace Gamu2059.hlsl_grimoire.ch14
                     shadowPass.SetupProperty(prop);
                     shadowPass.SetupRT();
                     shadowPass.Draw();
+                }
+
+                // デプスの処理
+                {
+                    var prop = new CustomCh14DepthPrePass.Property
+                    {
+                        context = context,
+                        commandBuffer = cmd,
+                        cullingResults = cullingResults,
+                        camera = camera,
+                    };
+                    depthPrePass.SetupProperty(prop);
+                    depthPrePass.SetupRT();
+                    depthPrePass.Draw();
+                }
+                
+                // GBufferの処理
+                {
+                    var prop = new CustomCh14GBufferPass.Property
+                    {
+                        context = context,
+                        commandBuffer = cmd,
+                        cullingResults = cullingResults,
+                        camera = camera,
+                    };
+                    gBufferPass.SetupProperty(prop);
+                    gBufferPass.SetupRT();
+                    gBufferPass.Draw();
                 }
 
                 // RenderTexture作成
@@ -111,8 +127,8 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 // CameraTargetに描画
                 RestoreCameraTarget(context, cmd);
 
+                gBufferPass.CleanupRT();
                 depthPrePass.CleanupRT();
-                
                 if (mainLightIndex >= 0)
                 {
                     shadowPass.CleanupRT();

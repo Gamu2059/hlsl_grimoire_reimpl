@@ -107,6 +107,21 @@ Shader "hlsl_grimoire/ch14/lit"
             ENDHLSL
         }
         
+        // GBuffer描画パス
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "CustomCh14GBuffer"
+            }
+
+            HLSLPROGRAM
+            #include "Ch14GBuffer.hlsl"
+            #pragma vertex GBufferVert
+            #pragma fragment GBufferFrag
+            ENDHLSL
+        }
+        
         // デプス描画パス
         Pass
         {
