@@ -9,7 +9,8 @@ namespace Gamu2059.hlsl_grimoire.ch14
     public class CustomCh14ShadowPass
     {
         private CustomCh14Property.Property property;
-        public Matrix4x4 LvpMatrix { get; private set; }
+        private Matrix4x4 lightViewMatrix;
+        private Matrix4x4 lightProjectionMatrix;
 
         /// <summary>
         /// シャドウプロパティのセットアップ
@@ -26,14 +27,32 @@ namespace Gamu2059.hlsl_grimoire.ch14
         {
             var cmd = property.commandBuffer;
             var context = property.context;
+            var cullingResults = property.cullingResults;
             var w = property.shadowResolution.x;
             var h = property.shadowResolution.y;
+            var mainLightIndex = property.mainLightIndex;
             
+            if (mainLightIndex < 0)
+            {
+                return;
+            }
+            
+            var light = cullingResults.visibleLights[mainLightIndex];
+            lightProjectionMatrix = Matrix4x4.Ortho(-25, 25, -25, 25, 0f, 100f);
+            lightProjectionMatrix = GL.GetGPUProjectionMatrix(lightProjectionMatrix, true);
+            lightViewMatrix = Matrix4x4.Inverse(light.localToWorldMatrix);
+            lightViewMatrix.m20 *= -1;
+            lightViewMatrix.m21 *= -1;
+            lightViewMatrix.m22 *= -1;
+            lightViewMatrix.m23 *= -1;
+
             cmd.Clear();
-            cmd.GetTemporaryRT(CustomCh14Property.ShadowColorTexId, w, h, 0, FilterMode.Bilinear, RenderTextureFormat.Default);
-            cmd.GetTemporaryRT(CustomCh14Property.ShadowDepthTexId, w, h, 32, FilterMode.Point, RenderTextureFormat.Depth);
-            cmd.SetRenderTarget(CustomCh14Property.ShadowColorTex, CustomCh14Property.ShadowDepthTex);
-            cmd.ClearRenderTarget(true, true, Color.black, 1.0f);
+            cmd.SetGlobalMatrix(CustomCh14Property.LvpMatId, lightProjectionMatrix * lightViewMatrix);
+            cmd.SetGlobalFloat(CustomCh14Property.ShadowBiasId, light.light.shadowBias);
+            cmd.SetGlobalFloat(CustomCh14Property.ShadowNormalBiasId, light.light.shadowNormalBias);
+            cmd.GetTemporaryRT(CustomCh14Property.ShadowDepthTexId, w, h, 32, FilterMode.Point, RenderTextureFormat.ARGBFloat);
+            cmd.SetRenderTarget(CustomCh14Property.ShadowDepthTex);
+            cmd.ClearRenderTarget(true, true, Color.black, 1f);
             context.ExecuteCommandBuffer(cmd);
         }
 
@@ -47,7 +66,6 @@ namespace Gamu2059.hlsl_grimoire.ch14
             
             cmd.Clear();
             cmd.ReleaseTemporaryRT(CustomCh14Property.ShadowDepthTexId);
-            cmd.ReleaseTemporaryRT(CustomCh14Property.ShadowColorTexId);
             context.ExecuteCommandBuffer(cmd);
         }
 
@@ -67,33 +85,15 @@ namespace Gamu2059.hlsl_grimoire.ch14
                 return;
             }
 
-            var light = cullingResults.visibleLights[mainLightIndex];
-            if (!cullingResults.GetShadowCasterBounds(mainLightIndex, out var bound))
-            {
-                return;
-            }
-
-            var projectionMatrix = Matrix4x4.Ortho(-10, 10, -10, 10, 0f, 50f);
-            projectionMatrix = GL.GetGPUProjectionMatrix(projectionMatrix, true);
-            var viewMatrix = Matrix4x4.Inverse(light.localToWorldMatrix);
-            viewMatrix.m20 *= -1;
-            viewMatrix.m21 *= -1;
-            viewMatrix.m22 *= -1;
-            viewMatrix.m23 *= -1;
-
-            LvpMatrix = projectionMatrix * viewMatrix;
-
             cmd.Clear();
-            cmd.SetRenderTarget(CustomCh14Property.ShadowColorTex, CustomCh14Property.ShadowDepthTex);
-            cmd.SetGlobalMatrix(CustomCh14Property.LvpMatId, LvpMatrix);
-            cmd.SetGlobalFloat(CustomCh14Property.ShadowBiasId, light.light.shadowBias);
-            cmd.SetGlobalFloat(CustomCh14Property.ShadowNormalBiasId, light.light.shadowNormalBias);
+            cmd.SetRenderTarget(CustomCh14Property.ShadowDepthTex);
             context.ExecuteCommandBuffer(cmd);
 
+            // 描画
             var sortingSettings = new SortingSettings
             {
                 criteria = SortingCriteria.CommonOpaque,
-                worldToCameraMatrix = viewMatrix,
+                worldToCameraMatrix = lightViewMatrix,
                 distanceMetric = DistanceMetric.Orthographic
             };
             var settings = new DrawingSettings(CustomCh14Property.ShadowTag, sortingSettings);
@@ -102,6 +102,11 @@ namespace Gamu2059.hlsl_grimoire.ch14
             );
 
             context.DrawRenderers(cullingResults, ref settings, ref filterSettings);
+            
+            // 反映
+            cmd.Clear();
+            cmd.SetGlobalTexture(CustomCh14Property.ShadowDepthTexId, CustomCh14Property.ShadowDepthTex);
+            context.ExecuteCommandBuffer(cmd);
         }
         
         private Matrix4x4 CreateLvpMatrix(VisibleLight visibleLight, Vector2 size, float near, float far)

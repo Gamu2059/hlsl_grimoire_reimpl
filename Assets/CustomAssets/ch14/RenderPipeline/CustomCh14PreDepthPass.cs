@@ -29,9 +29,9 @@ namespace Gamu2059.hlsl_grimoire.ch14
             var h = property.cameraResolution.y;
             
             cmd.Clear();
-            cmd.GetTemporaryRT(CustomCh14Property.PreDepthTexId, w, h, 16, FilterMode.Bilinear, RenderTextureFormat.RFloat);
+            cmd.GetTemporaryRT(CustomCh14Property.PreDepthTexId, w, h, 32, FilterMode.Point, RenderTextureFormat.ARGBFloat);
             cmd.SetRenderTarget(CustomCh14Property.PreDepthTex);
-            cmd.ClearRenderTarget(false, true, Color.black);
+            cmd.ClearRenderTarget(true, true, Color.black, 1f);
             context.ExecuteCommandBuffer(cmd);
         }
 
@@ -62,6 +62,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
             cmd.SetRenderTarget(CustomCh14Property.PreDepthTex);
             context.ExecuteCommandBuffer(cmd);
 
+            // 描画
             var sortingSettings = new SortingSettings(camera) {criteria = SortingCriteria.CommonOpaque};
             var settings = new DrawingSettings(CustomCh14Property.PreDepthTag, sortingSettings);
             var filterSettings = new FilteringSettings(
@@ -70,6 +71,11 @@ namespace Gamu2059.hlsl_grimoire.ch14
             );
 
             context.DrawRenderers(cullingResults, ref settings, ref filterSettings);
+            
+            // 反映
+            cmd.Clear();
+            cmd.SetGlobalTexture(CustomCh14Property.PreDepthTexId, CustomCh14Property.PreDepthTex);
+            context.ExecuteCommandBuffer(cmd);
         }
     }
 }

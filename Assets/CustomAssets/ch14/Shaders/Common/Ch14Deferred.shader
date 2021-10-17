@@ -1,4 +1,4 @@
-Shader "hlsl_grimoire/ch14/deferred" {
+Shader "Hidden/hlsl_grimoire/ch14/deferred" {
     Properties
     {
         _MainTex("Diffuse", 2D) = "white" {}
@@ -12,7 +12,7 @@ Shader "hlsl_grimoire/ch14/deferred" {
         Pass
         {
             HLSLPROGRAM
-            #include "Ch14DeferredLighting.hlsl"
+            #include "Ch14DeferredLightingPass.hlsl"
             #pragma vertex DeferredLightingVert
             #pragma fragment DeferredLightingFrag
             ENDHLSL

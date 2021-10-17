@@ -8,8 +8,12 @@ namespace Gamu2059.hlsl_grimoire.ch14
     /// </summary>
     [ExecuteInEditMode]
     [CreateAssetMenu(menuName = "Custom/ch14/RenderPipelineAsset", fileName = "ch14_render_pipeline_asset.asset")]
-    public class CustomCh14RenderPipelineAsset : RenderPipelineAsset
-    {
+    public class CustomCh14RenderPipelineAsset : RenderPipelineAsset {
+        [SerializeField]
+        private Color ambientLightColor;
+
+        public Color AmbientLightColor => ambientLightColor;
+        
         [SerializeField]
         private Vector2Int shadowResolution;
 
