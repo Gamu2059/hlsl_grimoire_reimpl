@@ -27,6 +27,25 @@ namespace Gamu2059.hlsl_grimoire.ch14 {
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras) {
+            
+            // 影のパラメータセットアップ
+            switch (asset.ShadowType) {
+                case ShadowType.Hard:
+                    Shader.DisableKeyword(CustomCh14Property.PcfKeyword);
+                    Shader.DisableKeyword(CustomCh14Property.VsmKeyword);
+                    break;
+                case ShadowType.PcfSoft:
+                    Shader.EnableKeyword(CustomCh14Property.PcfKeyword);
+                    Shader.DisableKeyword(CustomCh14Property.VsmKeyword);
+                    Shader.SetGlobalInt(CustomCh14Property.PcfSampleCountId, asset.PcfSampleCount);
+                    Shader.SetGlobalFloat(CustomCh14Property.PcfSampleSpaceId, asset.PcfSampleSpace);
+                    break;
+                case ShadowType.VsmSoft:
+                    Shader.EnableKeyword(CustomCh14Property.VsmKeyword);
+                    Shader.DisableKeyword(CustomCh14Property.PcfKeyword);
+                    break;
+            }
+            
             for (int i = 0; i < cameras.Length; i++) {
                 var cmd = CommandBufferPool.Get("CustomCh14");
                 var camera = cameras[i];
@@ -46,6 +65,7 @@ namespace Gamu2059.hlsl_grimoire.ch14 {
 
                 // プロパティデータの作成
                 var prop = new CustomCh14Property.Property {
+                    asset = asset,
                     context = context,
                     commandBuffer = cmd,
                     camera = camera,

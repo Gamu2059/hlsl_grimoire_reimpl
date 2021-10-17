@@ -12,6 +12,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
         
         public static readonly int PreDepthTexId = Shader.PropertyToID("_PreDepthTex");
         public static readonly int ShadowDepthTexId = Shader.PropertyToID("_ShadowDepthTex");
+        public static readonly int ShadowVsmDepthTexId = Shader.PropertyToID("_ShadowVsmDepthTex");
         public static readonly int GBufferAlbedoTexId = Shader.PropertyToID("_GBufferAlbedoTex");
         public static readonly int GBufferNormalTexId = Shader.PropertyToID("_GBufferNormalTex");
         public static readonly int GBufferWorldPosTexId = Shader.PropertyToID("_GBufferWorldPosTex");
@@ -23,6 +24,7 @@ namespace Gamu2059.hlsl_grimoire.ch14
 
         public static readonly RenderTargetIdentifier PreDepthTex = new RenderTargetIdentifier(PreDepthTexId);
         public static readonly RenderTargetIdentifier ShadowDepthTex = new RenderTargetIdentifier(ShadowDepthTexId);
+        public static readonly RenderTargetIdentifier ShadowVsmDepthTex = new RenderTargetIdentifier(ShadowVsmDepthTexId);
         public static readonly RenderTargetIdentifier GBufferAlbedo = new RenderTargetIdentifier(GBufferAlbedoTexId);
         public static readonly RenderTargetIdentifier GBufferNormal = new RenderTargetIdentifier(GBufferNormalTexId);
         public static readonly RenderTargetIdentifier GBufferWorldPos = new RenderTargetIdentifier(GBufferWorldPosTexId);
@@ -44,14 +46,22 @@ namespace Gamu2059.hlsl_grimoire.ch14
         };
         
         public static readonly int LvpMatId = Shader.PropertyToID("_WorldToLightViewProjection");
+        public static readonly int LightViewMatId = Shader.PropertyToID("_LightView");
+        public static readonly int LightZParamId = Shader.PropertyToID("_LightZParam");
         public static readonly int ShadowBiasId = Shader.PropertyToID("_ShadowBias");
         public static readonly int ShadowNormalBiasId = Shader.PropertyToID("_ShadowNormalBias");
         public static readonly int LightDirId = Shader.PropertyToID("_LightDir");
         public static readonly int LightColorId = Shader.PropertyToID("_LightColor");
         public static readonly int AmbientLightColorId = Shader.PropertyToID("_AmbientLightColor");
+
+        public static readonly int PcfSampleCountId = Shader.PropertyToID("_PcfSampleCount");
+        public static readonly int PcfSampleSpaceId = Shader.PropertyToID("_PcfSampleSpace");
+
+        public const string PcfKeyword = "PCF_SHADOW";
+        public const string VsmKeyword = "VSM_SHADOW";
         
-        public struct Property
-        {
+        public struct Property {
+            public CustomCh14RenderPipelineAsset asset;
             public ScriptableRenderContext context;
             public CommandBuffer commandBuffer;
             public CullingResults cullingResults;

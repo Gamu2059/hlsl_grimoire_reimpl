@@ -56,7 +56,7 @@ half4 DeferredLightingFrag(Varyings i) : COLOR0
     half3 lightColor = 0;
 
     // 影を受けない、または影の影響がほぼ無い時はライティングを行う
-    if (receiveShadow == 0 || shadowFactor > 0.9)
+    if (receiveShadow == 0 || shadowFactor > 0)
     {
         //// ディズニーベースの拡散反射 ////
         // フレネル反射を考慮した拡散反射を計算

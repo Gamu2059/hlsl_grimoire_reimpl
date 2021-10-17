@@ -67,7 +67,7 @@ Shader "hlsl_grimoire/ch14/deferred/dither_distance"
 
             HLSLPROGRAM
             #include "../Common/Ch14PreDepthPass.hlsl"
-            #pragma vertex PreDepthVert
+            #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature USE_ORIGIN_POS
 

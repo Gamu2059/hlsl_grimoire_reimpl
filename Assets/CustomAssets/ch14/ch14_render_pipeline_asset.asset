@@ -12,5 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccad789c217064a2d87a9311be86bc5a, type: 3}
   m_Name: ch14_render_pipeline_asset
   m_EditorClassIdentifier: 
-  ambientLightColor: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 0}
+  ambientLightColor: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 0}
   shadowResolution: {x: 2048, y: 2048}
+  shadowType: 1
+  pcfSampleCount: 2
+  pcfSampleSpace: 1
+  vsmSampleCount: 2
+  vsmSampleSpace: 1
+  vsmDistribution: 5
